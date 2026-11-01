@@ -14,13 +14,10 @@ Scheduled jobs, always-on agents and background programs, with when they run nex
 
 ---
 
-I had a script that was supposed to post to Instagram every evening at 19:07.
-One day I noticed it had never posted anything. No error popped up, nothing in the logs I usually look at.
-It turned out macOS had been quietly blocking it every night: the script lived in `~/Desktop`,
-and background jobs started by launchd aren't allowed to read the Desktop, Documents or Downloads folders.
-
-That made me wonder what else was running on my Mac on a timer, and whether any of it was actually working.
-`launchctl list` answers that in a wall of labels and numbers, so I built a window that answers it in plain words.
+Backstage is a small tool for checking on background tasks.
+macOS runs a lot of things on a timer or keeps them alive in the background through launchd,
+but `launchctl list` only answers in a wall of labels and numbers.
+Backstage reads the same information and shows it in plain words: what runs when, what's running now, and what failed.
 
 ## What it shows
 
