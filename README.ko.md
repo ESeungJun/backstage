@@ -10,7 +10,7 @@
 
 <p align="center"><a href="README.md">English</a> · <b>한국어</b></p>
 
-<p align="center"><img src="docs/images/hero.png" width="100%" alt="Backstage: 요약 카드, 예약·상주 작업 표, 실패한 작업의 상세 정보"></p>
+<p align="center"><img src="docs/images/hero.png" width="100%" alt="Backstage 전체 보기: 예약·상주 작업 표와 실패한 작업의 상세 정보"></p>
 
 ---
 
@@ -21,25 +21,39 @@ Backstage는 같은 정보를 읽어서 무엇이 언제 도는지, 지금 무�
 
 ## 보여주는 것
 
-- **예약 작업** — launchd 작업 전부를 일정과 함께 보여 줍니다(`매일 19:07`, `매주 월요일 09:10`, `30분마다`). 다음 실행 시각도 나옵니다.
+- **예약 작업** — 일정을 문장으로 풀어 보여 줍니다(`매일 19:07`, `매주 월요일 09:10`, `30분마다`). 다음 실행 시각도 나옵니다.
 - **상주 에이전트** — launchd가 계속 켜 두는 작업이 지금 돌고 있는지(PID 포함) 보여 줍니다.
-- **지난 실행 결과** — 마지막 종료 코드를 풀어서 보여 줍니다: `정상`, `실행 불가(126) · 파일 접근 권한 문제일 수 있음`, `명령을 찾지 못함(127)`, 신호로 종료 등.
-- **권한 함정** — 데스크탑·문서·다운로드 안의 파일을 쓰는 작업은 주황색으로 표시합니다.
+- **앱이 심은 항목** — `LaunchAgents`·`LaunchDaemons` 폴더에 파일이 없는 것도 보여 줍니다.
+  앱 번들 안에 든 에이전트(`SMAppService`), 프로그램이 실행 중에 직접 등록한 서비스가 여기에 해당합니다.
+  `com.apple.*` 과 `/System` 아래의 macOS 기본 서비스, 평소처럼 실행한 앱은 뺍니다.
+- **누가 심었는지** — 항목마다 출처 앱을 찾아 이름과 아이콘으로 보여 줍니다. 홈 폴더의 스크립트를 돌리는 내 에이전트는 `직접 만든 것으로 보임`,
+  앱이 지워지고 항목만 남았으면 `지워진 앱`으로 나옵니다.
+- **상태를 사실대로** — `실행 중`, `정상 · 686회 실행`, `아직 돈 적 없음`, `꺼 둠`, `중단됨`(로그아웃·재시동 때의 종료 신호),
+  `실행 불가(126) · 파일 접근 권한 문제일 수 있음`, `명령을 찾지 못함(127)` 등으로 나눕니다. 등록만 되고 한 번도 안 돈 작업을 "정상"이라고 하지 않습니다.
+- **실행 기록** — launchd는 마지막 실행 시각을 알려 주지 않습니다. Backstage가 켜져 있는 동안 실행 횟수가 느는 것을 지켜보고
+  직접 본 실행(끝난 것을 알아챈 시각, 종료 코드)을 적어 두었다가 마지막 실행과 최근 14회의 성공·실패, 성공률을 보여 줍니다.
+  기록이 아직 없으면 로그 파일이 마지막으로 바뀐 때를 대신 보여 줍니다.
+- **새로 들어온 항목** — 처음 켰을 때의 목록을 기준선으로 삼고, 그 뒤에 생긴 항목에 7일 동안 `새 항목` 표시를 붙입니다. 원하면 시스템 알림도 받을 수 있습니다(기본은 꺼짐).
+- **읽을 수 없는 설정 파일** — 관리자만 읽을 수 있는 데몬 설정 파일도 목록에서 빼지 않고 자물쇠 표시와 함께 보여 줍니다. 상태와 실행 파일은 `launchctl`에서 채웁니다.
+- **권한 함정** — 데스크탑·문서·다운로드·iCloud Drive·외장 볼륨의 파일을 쓰는 작업은 주황색으로 표시합니다.
   백그라운드에서 왜 실패할 수 있는지, 어떻게 고치는지(폴더를 `~/Projects` 같은 곳으로 옮기기)도 함께 알려 줍니다.
 - **상세 정보와 로그** — 작업을 고르면 전체 명령, 작업 폴더, 설정 파일, 로그 마지막 부분이 나옵니다.
-  설정 파일을 Finder에서 보거나 로그를 바로 열 수 있습니다.
+  설정 파일을 Finder에서 보거나, 로그를 열거나, 터미널에서 직접 확인할 명령(`launchctl print …`)을 복사할 수 있습니다.
+- **검색과 필터** — 이름·경로·앱 이름으로 찾고, `살펴볼 것`·`예약`·`상주`·`새로 들어옴`·`꺼짐`과 출처별로 거릅니다.
 - **실행 중인 프로그램** — 두 번째 탭에서 내 계정으로 도는 프로그램을 CPU 순으로 보여 줍니다(macOS 시스템 프로세스는 뺍니다).
-
-맨 위 카드 네 장이 한 번에 요약해 줍니다. 예약 작업이 몇 개이고 다음은 무엇인지,
-지금 무엇이 돌고 있는지, 지난번에 무엇이 실패했는지, 무엇이 권한 때문에 막힐 수 있는지.
 
 ## 메뉴바에 두고 쓰는 앱
 
-- **클릭 한 번** — 메뉴바의 시계 아이콘을 누르면 넓은 패널이 열리고, 바깥을 누르면 닫힙니다. Dock 아이콘도, 따로 관리할 창도 없습니다.
-- **고장 나면 알려 줌** — 지난 실행이 실패한 작업이 있으면 메뉴바 아이콘이 경고 표시와 개수로 바뀝니다.
-- **늘 최신** — 15초마다 새로 읽습니다(⌘R로 바로 새로고침).
-- **로그인 시 실행** — 처음 켤 때 자동으로 켜집니다. 패널의 `로그인 시 실행`을 끄면 꺼집니다.
-- **읽기 전용** — 작업을 켜거나, 끄거나, 고치거나, 지우지 않습니다. plist, `launchctl`, `ps`만 읽습니다.
+- **클릭 한 번** — 메뉴바 아이콘을 누르면 작은 요약이 내려옵니다: 살펴볼 것, 새로 들어온 항목, 다음 큐, 지금 무대 위.
+  `전체 보기`를 누르면 모든 작업이 든 창이 열립니다. Dock 아이콘은 없습니다.
+- **볼 일이 있을 때만 알려 줌** — 내 에이전트가 실패로 끝났을 때만 메뉴바 아이콘이 경고 표시와 개수로 바뀝니다.
+  남이 심은 데몬의 실패나 로그아웃 때의 종료 신호는 세지 않습니다. `확인함`을 누르면 그 실패는 빠지고, 다시 돌아 또 실패하면 다시 알려 줍니다.
+- **조용히 갱신** — 요약이나 창을 열 때 새로 읽고, 열려 있는 동안은 30초마다, 닫혀 있을 때는 5분마다 읽습니다(⌘R로 바로 새로고침).
+- **로그인 시 실행** — 처음 열 때 한 번 물어봅니다. 요약 아래 `⋯` 메뉴에서 언제든 켜고 끌 수 있습니다.
+- **읽기 전용** — 작업을 켜거나, 끄거나, 고치거나, 지우지 않습니다. plist, `launchctl print`, `ps`만 읽습니다.
+  쓰는 것은 자기 기록(`~/Library/Application Support/Backstage/`의 실행 기록·기준선)과 설정뿐입니다.
+
+<p align="center"><img src="docs/images/popover.png" width="420" alt="메뉴바 요약: 살펴볼 것, 새로 들어온 항목, 다음 큐, 지금 무대 위"></p>
 
 ## 설치
 
@@ -49,25 +63,31 @@ Backstage는 같은 정보를 읽어서 무엇이 언제 도는지, 지금 무�
 Developer ID로 서명하고 Apple 공증을 받았기 때문에 경고 없이 열립니다.
 
 macOS 14 이상이 필요하고, 따로 허락할 권한은 없습니다.
-실행하면 메뉴바에 시계 아이콘이 생깁니다(Dock 아이콘은 없습니다).
+실행하면 메뉴바에 막 모양 아이콘이 생깁니다(Dock 아이콘은 없습니다).
 
 Backstage는 macOS 전용입니다. macOS가 백그라운드 작업을 돌리는 방식인 launchd를 읽는 앱이기 때문입니다.
 
 ## 만든 방법
 
-- **SwiftUI + AppKit**, 파일 하나(`Sources/main.swift`)에 외부 의존성 없이 만들었습니다.
+- **SwiftUI + AppKit**, 외부 의존성 없는 Swift Package 입니다.
+  `BackstageCore`(모델·해석·수집, Foundation 만 사용)와 `Backstage`(화면·메뉴바)로 나뉩니다.
   메뉴바 아이콘은 `NSStatusItem`과 `NSPopover`, 로그인 시 실행은 `SMAppService`를 씁니다.
-- 일정은 `~/Library/LaunchAgents`, `/Library/LaunchAgents`, `/Library/LaunchDaemons`의 plist에서 바로 읽습니다.
-  상태는 `launchctl list` / `launchctl print`, 프로세스는 `ps`에서 가져옵니다.
+- 일정은 `~/Library/LaunchAgents`, `/Library/LaunchAgents`, `/Library/LaunchDaemons`의 plist에서 읽습니다.
+  상태는 `launchctl print gui/<uid>`·`launchctl print system`(도메인마다 한 번)과 서비스별 `launchctl print`, 프로세스는 `ps`에서 가져옵니다.
+  같은 PID로 계속 돌고 있는 서비스는 다시 묻지 않습니다.
 
 Claude Code와 함께 만들었습니다.
 
 ## 개발
 
 ```bash
+swift build              # 디버그 빌드
+swift test               # 파서·모델 테스트 (XCTest 가 없으면 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer)
 ./build.sh               # build/Backstage.app (유니버설, ad-hoc 서명)
 ./build.sh --install     # 빌드한 뒤 ~/Applications 에 복사하고 실행
-open build/Backstage.app --args --demo --window   # 예시 데이터를 일반 창으로 (스크린샷용)
+open build/Backstage.app --args --demo --window   # 예시 데이터를 전체 보기 창으로
+.build/debug/Backstage --probe                    # 화면 없이 수집 한 번의 프로세스 수·시간을 잰다
+.build/debug/Backstage --snapshot <폴더>           # 예시 화면을 화면에 띄우지 않고 PNG 로 저장 (README 그림)
 ```
 
 <details>
@@ -75,11 +95,14 @@ open build/Backstage.app --args --demo --window   # 예시 데이터를 일반 �
 
 | 경로 | 역할 |
 |---|---|
-| `Sources/main.swift` | 앱 전체: plist 해석, 일정 문장, 상태, 화면, 메뉴바 |
-| `build.sh` | arm64·x86_64로 컴파일해 합치고, 아이콘과 Info.plist를 만들고, 서명 |
+| `Sources/BackstageCore` | plist·`launchctl` 출력 해석, 일정 문장, 상태 판정, 수집, 실행 기록부 |
+| `Sources/Backstage` | 메뉴바 아이콘, 요약 패널, 전체 보기 창 |
+| `Tests/BackstageCoreTests` | 지어낸 라벨로 만든 `launchctl` 출력 고정 자료와 테스트 |
+| `build.sh` | arm64·x86_64로 `swift build` 해 합치고, 아이콘과 Info.plist를 만들고, 서명 |
 | `tools/make_icon.swift` | 앱 아이콘(`docs/images/icon-1024.png`)을 그림 |
 | `VERSION` | 앱 버전. 릴리스 태그와 같아야 함(`v1.0.0`) |
 
+push·PR 마다 `.github/workflows/ci.yml` 이 `swift build`·`swift test` 를 돌립니다.
 `v*` 태그를 push하면 GitHub Actions가 유니버설 앱을 빌드하고, 하드닝 런타임으로 Developer ID 서명을 합니다.
 그다음 앱과 DMG를 각각 공증받아 티켓을 붙이고, `Backstage-macOS.dmg`를 릴리스로 올립니다.
 필요한 Secrets: `MAC_CERT_P12`, `MAC_CERT_PASSWORD`, `APPLE_API_KEY_P8`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER`.
