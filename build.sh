@@ -10,11 +10,11 @@ VERSION=$(cat VERSION)
 APP="build/Backstage.app"
 rm -rf build && mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" build/obj
 
-# 1) 두 아키텍처로 컴파일해서 합친다
+# 1) 두 아키텍처로 따로 빌드해서 합친다 (Swift Package, 릴리스 구성)
 for arch in arm64 x86_64; do
-  swiftc -parse-as-library -swift-version 5 -O \
-    -target "$arch-apple-macosx14.0" \
-    Sources/main.swift -o "build/obj/Backstage-$arch"
+  triple="$arch-apple-macosx14.0"
+  swift build -c release --triple "$triple" --scratch-path "build/spm-$arch" --product Backstage
+  cp "$(swift build -c release --triple "$triple" --scratch-path "build/spm-$arch" --show-bin-path)/Backstage" "build/obj/Backstage-$arch"
 done
 lipo -create build/obj/Backstage-arm64 build/obj/Backstage-x86_64 -output "$APP/Contents/MacOS/Backstage"
 
