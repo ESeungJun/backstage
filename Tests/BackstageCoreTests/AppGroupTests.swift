@@ -68,3 +68,19 @@ final class AppGroupTests: XCTestCase {
         XCTAssertFalse(sameProgram(psPath: "node", livePath: "/opt/a/python"))
     }
 }
+
+final class JosaAndSelfCPUTests: XCTestCase {
+    func testWithJosa() {
+        XCTAssertEqual(withJosa("카카오톡", isApp: true, "을", "를"), "카카오톡을")
+        XCTAssertEqual(withJosa("메모", isApp: true, "이", "가"), "메모가")
+        XCTAssertEqual(withJosa("Chrome", isApp: true, "을", "를"), "Chrome 앱을")
+        XCTAssertEqual(withJosa("node", isApp: false, "이", "가"), "node 프로그램이")
+    }
+
+    func testReplacingCPUOnlyTouchesThatPID() {
+        let procs = [Proc(id: 1, cpu: 37.5, mem: 1, elapsed: "01:00", path: "/A"), Proc(id: 2, cpu: 5, mem: 1, elapsed: "01:00", path: "/B")]
+        let out = replacingCPU(procs, pid: 1, with: 0.4)
+        XCTAssertEqual(out.map(\.cpu), [0.4, 5])
+        XCTAssertEqual(out[0].path, "/A")
+    }
+}

@@ -89,11 +89,11 @@ public enum CPUMood: String, Sendable {
 
     public var text: String {
         switch self {
-        case .sleep: "꾸벅꾸벅 자는 중"
-        case .happy: "한가해요"
+        case .sleep: "자는 중"
+        case .happy: "가볍게 일하는 중"
         case .busy: "열심히 일하는 중"
-        case .sweat: "땀 뻘뻘, CPU 많이 씀"
-        case .boil: "과열! 코어 여러 개를 먹는 중"
+        case .sweat: "땀 흘리며 일하는 중"
+        case .boil: "코어 여러 개를 쓰는 중"
         }
     }
 }
@@ -104,6 +104,21 @@ public func canQuit(_ g: AppGroup, selfPID: Int, selfBundle: String?) -> Bool {
     if let selfBundle, g.appPath == selfBundle { return false }
     let systemRoots = ["/System/", "/usr/", "/bin/", "/sbin/", "/Library/Apple/"]
     return !g.procs.contains { p in systemRoots.contains { p.path.hasPrefix($0) } }
+}
+
+/// 이름 뒤에 조사를 붙인다. 한글로 끝나면 받침을 보고 고르고, 영어 이름이면 받침을 알 수 없어서
+/// "앱"·"프로그램"을 붙여 받침 있는 쪽을 쓴다("Chrome 앱을", "node 프로그램이"). `이(가)` 같은 표기를 피하려고.
+public func withJosa(_ name: String, isApp: Bool, _ afterBatchim: String, _ afterVowel: String) -> String {
+    if let last = name.unicodeScalars.last, (0xAC00...0xD7A3).contains(last.value) {
+        return name + ((last.value - 0xAC00) % 28 == 0 ? afterVowel : afterBatchim)
+    }
+    return name + (isApp ? " 앱" : " 프로그램") + afterBatchim
+}
+
+/// 목록에서 PID 하나의 CPU 값만 바꾼다. Backstage 자신은 ps 를 부르는 그 순간에 일하고 있어서 ps 의 순간값이 부풀려진다.
+/// 그래서 자기 줄은 갱신 사이 평균으로 바꿔 넣는다.
+public func replacingCPU(_ procs: [Proc], pid: Int, with cpu: Double) -> [Proc] {
+    procs.map { $0.id == pid ? Proc(id: $0.id, cpu: cpu, mem: $0.mem, elapsed: $0.elapsed, path: $0.path) : $0 }
 }
 
 /// ps가 본 프로세스가 지금 그 PID의 프로세스와 같은지. PID는 재사용되니 신호를 보내기 전에 확인한다.

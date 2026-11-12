@@ -29,7 +29,7 @@ struct ContentView: View {
                 }
                 Button { store.refresh() } label: { Image(systemName: "arrow.clockwise") }
                     .keyboardShortcut("r")
-                    .help("새로고침 (⌘R). 창이 열려 있는 동안은 30초마다 새로 읽습니다.")
+                    .help("새로고침 (⌘R). 창이 열려 있으면 30초마다 새로 읽어요.")
             }
             .padding(.horizontal, 14).padding(.top, 12)
 
@@ -112,7 +112,7 @@ struct JobsView: View {
                                 Text(j.displayProgram).fontWeight(.medium).lineLimit(1)
                                 if !j.plistReadable {
                                     Image(systemName: "lock.fill").font(.caption2).foregroundStyle(.secondary)
-                                        .help("설정 파일을 읽을 수 없어 일정을 알 수 없습니다")
+                                        .help("설정 파일을 읽을 수 없어서 일정을 몰라요")
                                 }
                                 if store.newIDs.contains(j.id) {
                                     Text("새 항목").font(.caption2).padding(.horizontal, 4)
@@ -159,7 +159,7 @@ struct JobsView: View {
                 }
                 .overlay {
                     if list.isEmpty {
-                        Text(store.updated == nil ? "살펴보는 중…" : (store.jobs.isEmpty ? "무대 뒤가 조용합니다." : "조건에 맞는 작업이 없습니다."))
+                        Text(store.updated == nil ? "살펴보는 중…" : (store.jobs.isEmpty ? "무대 뒤가 조용해요." : "조건에 맞는 작업이 없어요."))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -229,15 +229,15 @@ struct JobDetail: View {
                 }
 
                 if !risky.isEmpty {
-                    note("보호 폴더(데스크탑·문서·다운로드·iCloud Drive·외장 볼륨)의 파일을 씁니다. 백그라운드(launchd) 실행에서는 macOS가 접근을 막아 '실행 불가(126)'나 'Operation not permitted'로 실패할 수 있습니다. 폴더를 ~/Projects 같은 곳으로 옮기면 해결됩니다.",
+                    note("보호 폴더(데스크탑·문서·다운로드·iCloud Drive·외장 볼륨)의 파일을 써요. 백그라운드(launchd)로 돌면 macOS가 접근을 막아서 '실행 불가(126)'나 'Operation not permitted'로 실패할 수 있어요. 폴더를 ~/Projects 같은 곳으로 옮기면 돼요.",
                          symbol: "exclamationmark.triangle.fill", tint: .orange)
                 }
                 if !job.plistReadable {
-                    note("설정 파일을 읽을 권한이 없어 일정과 실행 조건은 알 수 없습니다. 상태와 실행 파일은 launchctl 이 알려 준 것입니다.",
+                    note("설정 파일을 읽을 권한이 없어서 일정과 실행 조건은 몰라요. 상태와 실행 파일은 launchctl이 알려 준 거예요.",
                          symbol: "lock.fill", tint: .secondary)
                 }
                 if job.ownerMissing {
-                    note("이 항목을 심은 앱이 지금은 그 자리에 없습니다. 앱을 지운 뒤 항목만 남은 것일 수 있습니다.",
+                    note("이 항목을 심은 앱이 지금은 그 자리에 없어요. 앱을 지우고 항목만 남았을 수 있어요.",
                          symbol: "questionmark.circle.fill", tint: .secondary)
                 }
 
@@ -270,7 +270,7 @@ struct JobDetail: View {
                 HStack {
                     if job.needsAttention(acknowledged: store.acknowledged) {
                         Button("확인함") { store.acknowledge(job) }
-                            .help("이 실패를 봤다고 표시합니다. 메뉴바 경고에서 빠지고, 다시 실패하면 다시 알려 줍니다.")
+                            .help("봤다고 표시해요. 메뉴바 경고에서 빠지고, 또 실패하면 다시 알려 줘요.")
                     }
                     Menu("더 보기") { JobActions(job: job, store: store) }.fixedSize()
                 }

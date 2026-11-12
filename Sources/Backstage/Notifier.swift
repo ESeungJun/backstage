@@ -21,14 +21,14 @@ final class Notifier: NSObject, ObservableObject, UNUserNotificationCenterDelega
     }
 
     func set(_ want: Bool) {
-        guard available else { error = "앱 묶음으로 실행할 때만 알림을 쓸 수 있습니다"; return }
+        guard available else { error = "설치한 앱으로 실행할 때만 알림을 쓸 수 있어요"; return }
         guard want else { enabled = false; UserDefaults.standard.set(false, forKey: Notifier.key); return }
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
             Task { @MainActor in
                 self.enabled = granted
-                self.error = granted ? nil : "시스템 설정 > 알림에서 Backstage 알림을 허용해야 합니다"
+                self.error = granted ? nil : "시스템 설정 > 알림에서 Backstage 알림을 허용해 주세요"
                 UserDefaults.standard.set(granted, forKey: Notifier.key)
             }
         }
