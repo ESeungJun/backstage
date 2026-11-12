@@ -94,11 +94,11 @@ func lastRunText(_ summary: RunSummary?, logChanged: Date?) -> (text: String, he
         let vague = s.lastSince.map { at.timeIntervalSince($0) > 900 } ?? false
         let result = s.lastExit.map { $0 == 0 ? "정상" : exitDescription($0) } ?? "결과 모름"
         return ((vague ? "늦어도 " : "") + relative(at) + " · " + result,
-                vague ? "Backstage 가 살펴보지 못한 사이에 돌았습니다. 끝난 것을 알아챈 시각입니다."
-                      : "Backstage 가 실행이 끝난 것을 알아챈 시각입니다.")
+                vague ? "Backstage가 보지 못한 사이에 돌았어요. 끝난 걸 알아챈 시각이에요."
+                      : "Backstage가 실행이 끝난 걸 알아챈 시각이에요.")
     }
     if let d = logChanged {
-        return ("로그 변경 " + relative(d), "실행 기록이 아직 없어, 로그 파일이 마지막으로 바뀐 때를 보여 줍니다.")
+        return ("로그 변경 " + relative(d), "실행 기록이 아직 없어서 로그 파일이 마지막으로 바뀐 때를 보여 줘요.")
     }
     return nil
 }

@@ -53,12 +53,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         updateIcon()
     }
 
-    /// 내 에이전트가 새로 실패했을 때만 경고 아이콘 + 개수. 평소에는 막 아이콘.
+    /// 내 에이전트가 새로 실패했을 때만 경고 아이콘 + 개수. 평소에는 앱 아이콘과 같은 캐릭터 실루엣.
     private func updateIcon() {
         let n = store.attention.count
-        let name = n > 0 ? "exclamationmark.triangle.fill" : "curtains.closed"
-        let img = NSImage(systemSymbolName: name, accessibilityDescription: "Backstage")
-            ?? NSImage(systemSymbolName: "clock.arrow.2.circlepath", accessibilityDescription: "Backstage")
+        let img = n > 0 ? NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: "Backstage") : Self.glyph
         img?.isTemplate = true
         item?.button?.image = img
         item?.button?.title = n > 0 ? " \(n)" : ""
@@ -82,6 +80,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         store.setViewingProcs(false)
         store.setViewing(false)
     }
+
+    /// 18pt 템플릿 캐릭터: 블롭 실루엣에 두 눈과 웃는 입을 뚫는다(앱의 BlobPainter 와 같은 곡선).
+    static let glyph: NSImage = {
+        let img = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { r in
+            let ctx = NSGraphicsContext.current!.cgContext
+            let W: CGFloat = 14, H: CGFloat = 13.5
+            let b = CGPoint(x: r.midX, y: 2), x0 = b.x - W / 2, top = b.y + H
+            let body = CGMutablePath()
+            body.move(to: CGPoint(x: x0, y: b.y))
+            body.addCurve(to: CGPoint(x: b.x, y: top), control1: CGPoint(x: x0 - 0.3, y: top - H * 0.25), control2: CGPoint(x: x0 + W * 0.18, y: top))
+            body.addCurve(to: CGPoint(x: x0 + W, y: b.y), control1: CGPoint(x: x0 + W * 0.82, y: top), control2: CGPoint(x: x0 + W + 0.3, y: top - H * 0.25))
+            body.closeSubpath()
+            ctx.addPath(body); ctx.setFillColor(NSColor.black.cgColor); ctx.fillPath()
+            ctx.setBlendMode(.clear)
+            let cy = top - H * 0.42, gap: CGFloat = 2.6, e: CGFloat = 1.25
+            for x in [b.x - gap, b.x + gap] { ctx.fillEllipse(in: CGRect(x: x - e, y: cy - e, width: 2 * e, height: 2 * e)) }
+            ctx.setLineWidth(1.1); ctx.setLineCap(.round)
+            ctx.move(to: CGPoint(x: b.x - 1.4, y: cy - 2.6))
+            ctx.addQuadCurve(to: CGPoint(x: b.x + 1.4, y: cy - 2.6), control: CGPoint(x: b.x, y: cy - 3.8))
+            ctx.strokePath()
+            return true
+        }
+        img.isTemplate = true
+        img.accessibilityDescription = "Backstage"
+        return img
+    }()
 
     private func showWindow(select id: Job.ID?, tab: Int? = nil) {
         if popover.isShown { popover.performClose(nil) }

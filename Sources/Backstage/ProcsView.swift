@@ -107,7 +107,7 @@ struct SummaryStrip: View {
             Text("\(Int(pct.rounded()))% (코어 \(cores)개)")
             Spacer()
             if let busiest = groups.first {
-                Text("제일 바쁜 애: ") + Text(busiest.name).foregroundColor(.primary).bold()
+                Text("제일 바쁜 앱: ") + Text(busiest.name).foregroundColor(.primary).bold()
             }
         }
         .font(.system(size: 12)).foregroundStyle(.secondary)
@@ -675,8 +675,8 @@ struct AppDetail: View {
             return group.pids.contains(Int(getpid())) ? "Backstage 자신이에요. 끄려면 메뉴바에서 종료하세요." : "macOS 기본 프로그램이라 여기서는 끄지 않아요."
         }
         return group.appPath != nil
-            ? "종료는 앱에 '꺼 줘'라고 요청하는 거예요. 저장 안 한 게 있으면 앱이 물어봐요."
-            : "종료 신호(SIGTERM)를 보내요. 프로그램이 정리하고 꺼질 시간을 줘요."
+            ? "종료를 누르면 앱에 꺼 달라고 요청해요. 저장 안 한 게 있으면 앱이 물어봐요."
+            : "종료 신호(SIGTERM)를 보내요. 프로그램이 스스로 정리하고 꺼져요."
     }
 
     func row(_ k: String, _ v: String) -> some View {
@@ -712,9 +712,9 @@ struct QuitSheet: View {
             VStack(spacing: 8) {
                 switch flow.step {
                 case .confirm:
-                    Text("\(g.name)을(를) 종료할까요?").font(.system(size: 14, weight: .bold))
+                    Text("\(withJosa(g.name, isApp: g.appPath != nil, "을", "를")) 끌까요?").font(.system(size: 14, weight: .bold))
                     Text("CPU \(String(format: "%.1f", g.cpu))% · 프로세스 \(g.procs.count)개\n"
-                         + (g.appPath != nil ? "저장하지 않은 문서가 있으면 \(g.name)이(가) 물어봐요." : "프로그램에 종료 신호를 보내요."))
+                         + (g.appPath != nil ? "저장하지 않은 문서가 있으면 앱이 물어봐요." : "프로그램에 종료 신호를 보내요."))
                         .font(.system(size: 13)).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     buttons {
                         Button("취소", action: close).keyboardShortcut(.cancelAction)
@@ -725,7 +725,7 @@ struct QuitSheet: View {
                     Text("꺼지기를 기다리는 중… \(n)").font(.system(size: 13)).foregroundStyle(.secondary).monospacedDigit()
                     buttons { Button("닫기", action: close).keyboardShortcut(.cancelAction) }
                 case .stuck:
-                    Text("\(g.name)이(가) 아직 안 꺼졌어요").font(.system(size: 14, weight: .bold))
+                    Text("\(withJosa(g.name, isApp: g.appPath != nil, "이", "가")) 아직 안 꺼졌어요").font(.system(size: 14, weight: .bold))
                     Text((g.appPath != nil ? "저장할지 묻는 창이 떠 있을 수 있어요. 앱으로 가서 확인해 보세요.\n" : "응답이 없을 수 있어요.\n")
                          + "강제 종료하면 저장 안 한 작업은 사라져요.")
                         .font(.system(size: 13)).foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -737,7 +737,7 @@ struct QuitSheet: View {
                         Button("강제 종료", role: .destructive) { force() }.buttonStyle(DangerButtonStyle())
                     }
                 case .done:
-                    Text("\(g.name)을(를) 껐어요").font(.system(size: 14, weight: .bold))
+                    Text("\(withJosa(g.name, isApp: g.appPath != nil, "을", "를")) 껐어요").font(.system(size: 14, weight: .bold))
                 }
             }
             .padding(18)
@@ -750,8 +750,8 @@ struct QuitSheet: View {
         // 화면을 못 보는 사람도 단계가 바뀐 걸 알 수 있게(초 세기는 읽지 않는다)
         .onChange(of: flow.step) { _, step in
             let text: String? = switch step {
-            case .stuck: "\(g.name)이(가) 아직 안 꺼졌어요. 강제 종료할 수 있어요."
-            case .done: "\(g.name)을(를) 껐어요."
+            case .stuck: "\(withJosa(g.name, isApp: g.appPath != nil, "이", "가")) 아직 안 꺼졌어요. 강제 종료할 수 있어요."
+            case .done: "\(withJosa(g.name, isApp: g.appPath != nil, "을", "를")) 껐어요."
             default: nil
             }
             if let text { AccessibilityNotification.Announcement(text).post() }
