@@ -92,8 +92,8 @@ public enum CPUMood: String, Sendable {
         case .sleep: "자는 중"
         case .happy: "가볍게 일하는 중"
         case .busy: "열심히 일하는 중"
-        case .sweat: "땀 흘리며 일하는 중"
-        case .boil: "코어 여러 개를 쓰는 중"
+        case .sweat: "CPU를 많이 쓰는 중"
+        case .boil: "CPU를 아주 많이 쓰는 중(코어 여러 개)"
         }
     }
 }

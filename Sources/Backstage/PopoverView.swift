@@ -62,16 +62,16 @@ struct PopoverView: View {
                         }
                     }
 
-                    section("CPU 제일 많이 쓰는 앱", count: nil) {
-                        BusiestCard(store: store, open: openProcs)
-                    }
-
                     if !arrivals.isEmpty {
                         section("새로 들어온 항목", count: arrivals.count) {
                             ForEach(arrivals.prefix(5)) { j in
                                 row(j, sub: "\(OwnerLookup.shared.info(j.owner, missing: j.ownerMissing).name) · \(j.source.rawValue)") { EmptyView() }
                             }
                         }
+                    }
+
+                    section("CPU 제일 많이 쓰는 앱", count: nil) {
+                        BusiestCard(store: store, open: openProcs)
                     }
 
                     section("다음 큐", count: nil) {
