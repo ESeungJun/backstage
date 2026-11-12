@@ -75,7 +75,23 @@ func demoData() -> DemoData {
 }
 
 func demoProcs() -> [Proc] {
-    [("Example Browser Helper", 18.2, 3.1), ("node", 6.4, 1.2), ("Editor Helper (Renderer)", 4.9, 2.4),
-     ("Containers", 2.1, 4.8), ("Chat Helper", 1.3, 1.5), ("caddy", 0.4, 0.2), ("Backstage", 0.3, 0.3)]
-        .enumerated().map { i, t in Proc(id: 4000 + i * 37, cpu: t.1, mem: t.2, elapsed: "0\(i + 1):12:44", path: "/Applications/\(t.0)") }
+    // 앱 단위로 합쳐지는 모습이 보이게 도우미를 섞는다. 파일이 없는 경로라 아이콘은 글자 타일로 그려진다.
+    let browser = "/Applications/Example Browser.app"
+    let helper = "\(browser)/Contents/Frameworks/Example Browser Framework.framework/Helpers"
+    let rows: [(String, Double, Double, String)] = [
+        ("\(browser)/Contents/MacOS/Example Browser", 21.4, 3.1, "03:12:44"),
+        ("\(helper)/Example Browser Helper (Renderer).app/Contents/MacOS/Example Browser Helper (Renderer)", 88.3, 4.2, "41:02"),
+        ("\(helper)/Example Browser Helper (GPU).app/Contents/MacOS/Example Browser Helper (GPU)", 32.3, 2.5, "03:12:40"),
+        ("/Applications/Editor.app/Contents/MacOS/Editor", 22.6, 5.0, "01:40:10"),
+        ("/Applications/Editor.app/Contents/Frameworks/Editor Helper (Renderer).app/Contents/MacOS/Editor Helper (Renderer)", 15.5, 2.1, "01:40:02"),
+        ("/Applications/Containers.app/Contents/MacOS/Containers", 21.7, 6.3, "05:02:11"),
+        ("/opt/homebrew/bin/node", 6.1, 1.2, "07:55:03"),
+        ("/opt/homebrew/bin/node", 3.2, 0.8, "02:10:30"),
+        ("/Applications/Chat.app/Contents/MacOS/Chat", 6.2, 2.9, "52:18"),
+        ("/Applications/Music Player.app/Contents/MacOS/Music Player", 3.1, 1.4, "02:03:40"),
+        ("/Applications/Notes Pad.app/Contents/MacOS/Notes Pad", 0.8, 1.8, "04:10:05"),
+        ("/opt/homebrew/bin/caddy", 0.2, 0.2, "08:20:00"),
+        ("/Applications/Backstage.app/Contents/MacOS/Backstage", 0.05, 0.3, "08:20:12"),
+    ]
+    return rows.enumerated().map { i, r in Proc(id: 4000 + i * 37, cpu: r.1, mem: r.2, elapsed: r.3, path: r.0) }
 }

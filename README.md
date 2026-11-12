@@ -44,7 +44,12 @@ Backstage reads the same information and shows it in plain words: what runs when
 - **Details and logs** — pick a job to see its full command, working folder and settings file and the last lines of its log;
   reveal the plist in Finder, open the log, or copy the command to inspect it yourself (`launchctl print …`).
 - **Search and filters** — search by name, path or app, and filter by needs-a-look, scheduled, always-on, new, off, or by source.
-- **Running programs** — a second tab lists the programs running under your account, sorted by CPU, without the macOS system processes.
+- **Running programs** — a second tab shows each app running under your account as a little jelly character: the more CPU it uses, the fatter it gets.
+  It dozes when idle, sweats past 50%, and steams past 100% (one core = 100%). Helper processes are added to their app, and the macOS system processes are left out.
+  Pick one to see its CPU, memory and running time, or switch to the table for every process.
+- **Quit a program** — press `종료…` and confirm. An app is asked to quit normally (it can still ask you to save); any other program gets `SIGTERM`.
+  If it is still running after 5 seconds, you can choose to force quit. macOS system programs and Backstage itself have no quit button.
+  The animation runs in Core Animation, so watching CPU doesn't cost CPU, and it stops with Reduce Motion on.
 
 ## Made to sit in the menu bar
 
@@ -54,10 +59,13 @@ Backstage reads the same information and shows it in plain words: what runs when
   Failed third-party daemons and logout signals don't count. Press `확인함` to dismiss a failure; it comes back if the job fails again.
 - **Quiet refresh** — it reads when you open the summary or the window, every 30 seconds while one is open, and every 5 minutes otherwise (or press ⌘R).
 - **Launch at login** — it asks once, the first time you open it. You can switch it any time from the `⋯` menu.
-- **Read-only** — it never starts, stops, edits or deletes a job. It only reads plists, `launchctl print` and `ps`.
+- **Read-only for jobs** — it never starts, stops, edits or deletes a job. It only reads plists, `launchctl print` and `ps`.
+  The one thing it can stop is a running program you pick and confirm in the running programs tab.
   The only things it writes are its own records (run history and baseline in `~/Library/Application Support/Backstage/`) and preferences.
 
-<p align="center"><img src="docs/images/popover.png" width="420" alt="Menu bar summary: needs a look, new arrivals, next cues, on stage now"></p>
+<p align="center"><img src="docs/images/procs.png" width="100%" alt="Running programs: apps as jelly characters sized by CPU, with details and a quit button for the busiest one"></p>
+
+<p align="center"><img src="docs/images/popover.png" width="420" alt="Menu bar summary: needs a look, the app using the most CPU, new arrivals, next cues, on stage now"></p>
 
 ## Install
 
@@ -89,9 +97,9 @@ swift build              # debug build
 swift test               # parser and model tests (without XCTest: DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer)
 ./build.sh               # build/Backstage.app (universal, ad-hoc signed)
 ./build.sh --install     # build, copy to ~/Applications and launch
-open build/Backstage.app --args --demo --window   # sample data in the full window
+open build/Backstage.app --args --demo --window   # sample data in the full window (add --procs for the running programs tab)
 .build/debug/Backstage --probe                    # no UI: process count and time of one collection
-.build/debug/Backstage --snapshot <dir>           # render the sample screens to PNG without showing them (README images)
+.build/debug/Backstage --snapshot <dir>           # render the sample screens to PNG without showing them (README images; --dark for dark mode)
 ```
 
 <details>
@@ -99,12 +107,12 @@ open build/Backstage.app --args --demo --window   # sample data in the full wind
 
 | Path | Role |
 |---|---|
-| `Sources/BackstageCore` | Parsing of plists and `launchctl` output, schedule wording, status, collection, run history |
-| `Sources/Backstage` | Menu bar icon, summary panel, full window |
+| `Sources/BackstageCore` | Parsing of plists and `launchctl` output, schedule wording, status, collection, run history, grouping processes by app |
+| `Sources/Backstage` | Menu bar icon, summary panel, full window, CPU characters (`ProcsView`) and quitting programs (`Quitter`) |
 | `Tests/BackstageCoreTests` | Fixtures of `launchctl` output with made-up labels, and the tests |
 | `build.sh` | Runs `swift build` for arm64 and x86_64, merges them, makes the icon and Info.plist, signs |
 | `tools/make_icon.swift` | Draws the app icon (`docs/images/icon-1024.png`) |
-| `VERSION` | App version; a release tag must match it (`v1.1.0`) |
+| `VERSION` | App version; a release tag must match it (`v2.0.0`) |
 
 Every push and pull request runs `swift build` and `swift test` (`.github/workflows/ci.yml`).
 Pushing a `v*` tag makes GitHub Actions build the universal app, sign it with a Developer ID with the hardened runtime,

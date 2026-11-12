@@ -1,4 +1,4 @@
-// 앱 아이콘(1024px PNG)을 그린다: 무대 커튼 + 가운데 시계 아이콘
+// 앱 아이콘(1024px PNG)을 그린다: 밝은 무대에 선 큰 캐릭터 하나(프로그램 탭의 블롭과 같은 곡선), 머리에 시계 모자
 // swift tools/make_icon.swift <출력.png>
 import AppKit
 
@@ -8,6 +8,10 @@ let img = NSImage(size: NSSize(width: size, height: size))
 img.lockFocus()
 let ctx = NSGraphicsContext.current!.cgContext
 
+func rgb(_ v: UInt32, _ a: CGFloat = 1) -> CGColor {
+    NSColor(srgbRed: CGFloat(v >> 16 & 0xff) / 255, green: CGFloat(v >> 8 & 0xff) / 255, blue: CGFloat(v & 0xff) / 255, alpha: a).cgColor
+}
+
 // macOS 아이콘 격자: 1024 캔버스 안 824 둥근 사각형
 let inset: CGFloat = 100
 let rect = CGRect(x: inset, y: inset, width: size - inset * 2, height: size - inset * 2)
@@ -15,99 +19,72 @@ let shape = CGPath(roundedRect: rect, cornerWidth: 185, cornerHeight: 185, trans
 
 // 그림자
 ctx.saveGState()
-ctx.setShadow(offset: CGSize(width: 0, height: -12), blur: 28, color: NSColor.black.withAlphaComponent(0.35).cgColor)
-ctx.addPath(shape); ctx.setFillColor(NSColor.black.cgColor); ctx.fillPath()
+ctx.setShadow(offset: CGSize(width: 0, height: -12), blur: 28, color: rgb(0x000000, 0.35))
+ctx.addPath(shape); ctx.setFillColor(rgb(0x000000)); ctx.fillPath()
 ctx.restoreGState()
 
 ctx.saveGState()
 ctx.addPath(shape); ctx.clip()
 
-// 배경: 어두운 무대
-let bg = CGGradient(colorsSpace: nil, colors: [
-    NSColor(red: 0.09, green: 0.07, blue: 0.20, alpha: 1).cgColor,
-    NSColor(red: 0.20, green: 0.10, blue: 0.36, alpha: 1).cgColor,
-] as CFArray, locations: [0, 1])!
+// 배경: 연보라 → 흰색, 아래는 바닥 띠
+let bg = CGGradient(colorsSpace: nil, colors: [rgb(0xE9E4F7), rgb(0xFFFFFF)] as CFArray, locations: [0, 1])!
 ctx.drawLinearGradient(bg, start: CGPoint(x: 0, y: rect.minY), end: CGPoint(x: 0, y: rect.maxY), options: [])
+ctx.setFillColor(rgb(0xD9D3EA)); ctx.fill(CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: 170))
 
-// 바닥 스포트라이트
-let spot = CGGradient(colorsSpace: nil, colors: [
-    NSColor(red: 1, green: 0.85, blue: 0.55, alpha: 0.45).cgColor,
-    NSColor(red: 1, green: 0.85, blue: 0.55, alpha: 0).cgColor,
-] as CFArray, locations: [0, 1])!
-ctx.drawRadialGradient(spot, startCenter: CGPoint(x: size / 2, y: rect.minY + 150), startRadius: 0,
-                       endCenter: CGPoint(x: size / 2, y: rect.minY + 150), endRadius: 360, options: [])
+// 캐릭터. 앱의 BlobPainter 와 같은 곡선을 y 가 위로 가는 좌표로 옮겼다. k 는 앱(폭 162) 대비 배율.
+let W: CGFloat = 560, H: CGFloat = 480, k = W / 162
+let b = CGPoint(x: 512, y: 250)            // 바닥 가운데
+let x0 = b.x - W / 2, top = b.y + H
+let ink = rgb(0x1D1D1F)
 
-// 커튼: 양옆, 주름은 세로 그라데이션 띠
-func curtain(left: Bool) {
-    let w: CGFloat = 230
-    let x0 = left ? rect.minX : rect.maxX - w
-    let path = CGMutablePath()
-    if left {
-        path.move(to: CGPoint(x: x0, y: rect.minY))
-        path.addLine(to: CGPoint(x: x0, y: rect.maxY))
-        path.addLine(to: CGPoint(x: x0 + w, y: rect.maxY))
-        path.addQuadCurve(to: CGPoint(x: x0 + 70, y: rect.minY), control: CGPoint(x: x0 + w - 10, y: rect.midY - 40))
-    } else {
-        path.move(to: CGPoint(x: x0 + w, y: rect.minY))
-        path.addLine(to: CGPoint(x: x0 + w, y: rect.maxY))
-        path.addLine(to: CGPoint(x: x0, y: rect.maxY))
-        path.addQuadCurve(to: CGPoint(x: x0 + w - 70, y: rect.minY), control: CGPoint(x: x0 + 10, y: rect.midY - 40))
-    }
-    path.closeSubpath()
-    ctx.saveGState()
-    ctx.addPath(path); ctx.clip()
-    let folds = 4
-    for i in 0..<folds {
-        let fw = w / CGFloat(folds)
-        let g = CGGradient(colorsSpace: nil, colors: [
-            NSColor(red: 0.55, green: 0.05, blue: 0.12, alpha: 1).cgColor,
-            NSColor(red: 0.86, green: 0.16, blue: 0.24, alpha: 1).cgColor,
-            NSColor(red: 0.55, green: 0.05, blue: 0.12, alpha: 1).cgColor,
-        ] as CFArray, locations: [0, 0.5, 1])!
-        let fx = x0 + CGFloat(i) * fw
-        ctx.drawLinearGradient(g, start: CGPoint(x: fx, y: 0), end: CGPoint(x: fx + fw, y: 0), options: [])
-    }
-    ctx.restoreGState()
-}
-curtain(left: true)
-curtain(left: false)
+ctx.setFillColor(rgb(0x000000, 0.18))
+ctx.fillEllipse(in: CGRect(x: b.x - W / 2, y: b.y - 14 * k, width: W, height: 20 * k))
 
-// 위쪽 가림막(밸런스)
-let valance = CGRect(x: rect.minX, y: rect.maxY - 120, width: rect.width, height: 120)
-let vg = CGGradient(colorsSpace: nil, colors: [
-    NSColor(red: 0.62, green: 0.07, blue: 0.15, alpha: 1).cgColor,
-    NSColor(red: 0.80, green: 0.14, blue: 0.22, alpha: 1).cgColor,
-] as CFArray, locations: [0, 1])!
-ctx.saveGState()
-let vpath = CGMutablePath()
-vpath.addRect(CGRect(x: valance.minX, y: valance.minY + 40, width: valance.width, height: valance.height - 40))
-let scallops = 6
-let sw = valance.width / CGFloat(scallops)
-for i in 0..<scallops {
-    vpath.addEllipse(in: CGRect(x: valance.minX + CGFloat(i) * sw, y: valance.minY, width: sw, height: 80))
-}
-ctx.addPath(vpath); ctx.clip()
-ctx.drawLinearGradient(vg, start: CGPoint(x: 0, y: valance.minY), end: CGPoint(x: 0, y: valance.maxY), options: [])
-ctx.restoreGState()
-// 금색 테두리 선
-ctx.setStrokeColor(NSColor(red: 0.98, green: 0.78, blue: 0.35, alpha: 1).cgColor)
-ctx.setLineWidth(10)
-ctx.move(to: CGPoint(x: rect.minX, y: valance.minY + 44)); ctx.addLine(to: CGPoint(x: rect.maxX, y: valance.minY + 44))
+let body = CGMutablePath()
+body.move(to: CGPoint(x: x0, y: b.y))
+body.addCurve(to: CGPoint(x: b.x, y: top), control1: CGPoint(x: x0 - 4 * k, y: top - H * 0.25), control2: CGPoint(x: x0 + W * 0.18, y: top))
+body.addCurve(to: CGPoint(x: x0 + W, y: b.y), control1: CGPoint(x: x0 + W * 0.82, y: top), control2: CGPoint(x: x0 + W + 4 * k, y: top - H * 0.25))
+body.closeSubpath()
+ctx.addPath(body); ctx.setFillColor(rgb(0x70BD5C)); ctx.fillPath()
+
+// 반짝임
+let s0 = CGPoint(x: x0 + W * 0.2, y: top - H * 0.3)
+ctx.setStrokeColor(rgb(0xFFFFFF, 0.38)); ctx.setLineWidth(5 * k); ctx.setLineCap(.round)
+ctx.move(to: s0)
+ctx.addQuadCurve(to: CGPoint(x: s0.x + W * 0.25, y: s0.y + H * 0.2), control: CGPoint(x: s0.x + W * 0.1, y: s0.y + H * 0.18))
 ctx.strokePath()
 
-ctx.restoreGState()
+// 얼굴: 한가한(happy) 표정
+let e = 7 * k, gap = 22 * k, cy = top - H * 0.42
+for x in [b.x - gap, b.x + gap] {
+    ctx.setFillColor(ink); ctx.fillEllipse(in: CGRect(x: x - e, y: cy - e, width: 2 * e, height: 2 * e))
+    let r = e * 0.35
+    ctx.setFillColor(rgb(0xFFFFFF)); ctx.fillEllipse(in: CGRect(x: x, y: cy, width: 2 * r, height: 2 * r))
+}
+ctx.setStrokeColor(ink); ctx.setLineWidth(3 * k)
+ctx.move(to: CGPoint(x: b.x - 7 * k, y: cy - e - 6 * k))
+ctx.addQuadCurve(to: CGPoint(x: b.x + 7 * k, y: cy - e - 6 * k), control: CGPoint(x: b.x, y: cy - e - 13 * k))
+ctx.strokePath()
 
-// 가운데: 메뉴바와 같은 시계 아이콘
-let conf = NSImage.SymbolConfiguration(pointSize: 330, weight: .semibold)
-    .applying(.init(paletteColors: [NSColor(red: 1, green: 0.95, blue: 0.85, alpha: 1)]))
+// 모자: 메뉴바와 같은 시계 기호를 남색 타일에, 앱 캐릭터의 아이콘 모자처럼 기울여
+let ic = 30 * k
+ctx.saveGState()
+ctx.translateBy(x: b.x, y: top)
+ctx.rotate(by: 8 * .pi / 180)
+let tile = CGRect(x: -ic * 0.6, y: -ic * 0.2, width: ic * 1.2, height: ic * 1.2)
+ctx.setShadow(offset: CGSize(width: 0, height: -3 * k), blur: 6 * k, color: rgb(0x000000, 0.25))
+ctx.addPath(CGPath(roundedRect: tile, cornerWidth: ic * 0.28, cornerHeight: ic * 0.28, transform: nil))
+ctx.setFillColor(rgb(0x2E2450)); ctx.fillPath()
+ctx.setShadow(offset: .zero, blur: 0)
+let conf = NSImage.SymbolConfiguration(pointSize: ic * 0.72, weight: .bold)
+    .applying(.init(paletteColors: [NSColor(srgbRed: 1, green: 0.95, blue: 0.85, alpha: 1)]))
 if let sym = NSImage(systemSymbolName: "clock.arrow.2.circlepath", accessibilityDescription: nil)?.withSymbolConfiguration(conf) {
     let s = sym.size
-    let r = CGRect(x: (size - s.width) / 2, y: (size - s.height) / 2 - 30, width: s.width, height: s.height)
-    ctx.saveGState()
-    ctx.setShadow(offset: CGSize(width: 0, height: -6), blur: 24, color: NSColor.black.withAlphaComponent(0.45).cgColor)
-    sym.draw(in: r)
-    ctx.restoreGState()
+    sym.draw(in: CGRect(x: tile.midX - s.width / 2, y: tile.midY - s.height / 2, width: s.width, height: s.height))
 }
+ctx.restoreGState()
+
+ctx.restoreGState()
 
 img.unlockFocus()
 let rep = NSBitmapImageRep(data: img.tiffRepresentation!)!
