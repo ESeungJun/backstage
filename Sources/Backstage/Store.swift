@@ -27,6 +27,10 @@ struct Collected: Sendable {
 final class Store: ObservableObject {
     @Published var jobs: [Job] = []
     @Published var procs: [Proc] = []
+    /// 프로그램 목록을 한 번이라도 읽었는지(처음 여는 순간 '없음'으로 보이지 않게)
+    @Published var procsLoaded = false
+    /// 전체 보기 창에 띄울 탭(0 작업, 1 프로그램). 패널에서 창을 열 때 정한다.
+    @Published var windowTab: Int?
     @Published var summaries: [String: RunSummary] = [:]
     @Published var logChanged: [String: Date] = [:]
     @Published var newIDs: Set<String> = []
@@ -64,7 +68,7 @@ final class Store: ObservableObject {
         self.acknowledged = Set(demo ? [] : (UserDefaults.standard.stringArray(forKey: Store.ackKey) ?? []))
         if demo {
             let d = demoData()
-            jobs = d.jobs; procs = demoProcs(); summaries = d.summaries; newIDs = d.newIDs
+            jobs = d.jobs; procs = demoProcs(); procsLoaded = true; summaries = d.summaries; newIDs = d.newIDs
             updated = Date()
             return
         }
@@ -99,9 +103,15 @@ final class Store: ObservableObject {
     }
 
     /// 프로그램 탭이 보일 때만 ps 를 돈다.
-    func setViewingProcs(_ on: Bool) {
+    func setViewingProcs(_ on: Bool, refreshNow: Bool = true) {
         procViewers = max(0, procViewers + (on ? 1 : -1))
-        if on { refresh() }
+        if on, refreshNow { refresh() }
+    }
+
+    /// 예시 데이터에서 종료를 누르면 그 앱의 프로세스를 목록에서 뺀다(실제로는 아무것도 끄지 않는다).
+    func pretendQuit(_ g: AppGroup) {
+        let gone = Set(g.pids)
+        procs.removeAll { gone.contains($0.id) }
     }
 
     func refresh() {
@@ -143,7 +153,10 @@ final class Store: ObservableObject {
         if jobs != r.jobs { jobs = r.jobs }
         if summaries != r.summaries { summaries = r.summaries }
         if logChanged != r.logChanged { logChanged = r.logChanged }
-        if let p = r.procs, p != procs { procs = p }
+        if let p = r.procs {
+            if p != procs { procs = p }
+            if !procsLoaded { procsLoaded = true }
+        }
         if baseline != r.baseline, let b = r.baseline, let url = baselineURL { saveBaseline(b, to: url) }
         baseline = r.baseline
         let fresh = Set(r.jobs.map(\.id).filter { r.baseline?.isNew($0, now: now) ?? false })
