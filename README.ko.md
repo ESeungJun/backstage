@@ -61,7 +61,7 @@ Backstage는 같은 정보를 읽어서 무엇이 언제 도는지, 지금 무�
 
 <p align="center"><img src="docs/images/procs.png" width="100%" alt="실행 중인 프로그램: CPU만큼 뚱뚱한 젤리 캐릭터들과, 가장 바쁜 앱의 상세 정보와 종료 버튼"></p>
 
-<p align="center"><img src="docs/images/popover.png" width="420" alt="메뉴바 요약: 살펴볼 것, 새로 들어온 항목, 다음 큐, 지금 무대 위"></p>
+<p align="center"><img src="docs/images/popover.png" width="420" alt="메뉴바 요약: 살펴볼 것, CPU 제일 많이 쓰는 앱, 새로 들어온 항목, 다음 큐, 지금 무대 위"></p>
 
 ## 설치
 

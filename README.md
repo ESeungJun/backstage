@@ -65,7 +65,7 @@ Backstage reads the same information and shows it in plain words: what runs when
 
 <p align="center"><img src="docs/images/procs.png" width="100%" alt="Running programs: apps as jelly characters sized by CPU, with details and a quit button for the busiest one"></p>
 
-<p align="center"><img src="docs/images/popover.png" width="420" alt="Menu bar summary: needs a look, new arrivals, next cues, on stage now"></p>
+<p align="center"><img src="docs/images/popover.png" width="420" alt="Menu bar summary: needs a look, the app using the most CPU, new arrivals, next cues, on stage now"></p>
 
 ## Install
 

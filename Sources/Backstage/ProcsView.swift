@@ -61,11 +61,8 @@ struct CharacterBoard: View {
     @State private var selected: AppGroup.ID?
     @State private var quit: QuitFlow?
 
-    static let shown = 7
-
     var body: some View {
         let groups = groupByApp(store.procs)
-        let top = Array(groups.prefix(Self.shown))
         let current = groups.first { $0.id == selected } ?? groups.first
 
         VStack(spacing: 0) {
@@ -73,7 +70,7 @@ struct CharacterBoard: View {
             Divider()
             HStack(spacing: 0) {
                 ZStack {
-                    Stage(groups: top, hidden: Array(groups.dropFirst(Self.shown)), selected: current?.id,
+                    Stage(groups: groups, selected: current?.id,
                           pick: { selected = $0 }, showTable: showTable)
                     // 닫힌 확인창의 기다림이 늦게 끝나도 새로 연 확인창을 닫지 않게 표로 맞춘다
                     if let q = quit {
@@ -103,18 +100,10 @@ struct CharacterBoard: View {
 struct SummaryStrip: View {
     let groups: [AppGroup]
     var body: some View {
-        let cores = ProcessInfo.processInfo.activeProcessorCount
-        let pct = min(100, groups.reduce(0) { $0 + $1.cpu } / Double(cores))
+        let (pct, cores) = Self.total(groups)
         HStack(spacing: 10) {
             Text("내 프로그램 CPU")
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Palette.floor)
-                    Capsule().fill(LinearGradient(colors: [Palette.ok, Palette.warm, Palette.hot], startPoint: .leading, endPoint: .trailing))
-                        .frame(width: geo.size.width * pct / 100)
-                }
-            }
-            .frame(maxWidth: 240).frame(height: 7)
+            CPUBar(pct: pct).frame(maxWidth: 240)
             Text("\(Int(pct.rounded()))% (코어 \(cores)개)")
             Spacer()
             if let busiest = groups.first {
@@ -125,59 +114,145 @@ struct SummaryStrip: View {
         .padding(.horizontal, 14).padding(.vertical, 8)
         .accessibilityElement(children: .combine)
     }
+
+    /// 내 프로그램이 쓰는 CPU 를 맥 전체(코어 수) 대비 %로
+    static func total(_ groups: [AppGroup]) -> (pct: Double, cores: Int) {
+        let cores = ProcessInfo.processInfo.activeProcessorCount
+        return (min(100, groups.reduce(0) { $0 + $1.cpu } / Double(cores)), cores)
+    }
 }
 
-/// 캐릭터들이 바닥 띠 위에 나란히 선 무대. 폭이 모자라면 통째로 줄인다.
+/// 초록 → 주황 → 빨강으로 차는 가는 막대
+struct CPUBar: View {
+    let pct: Double
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Palette.floor)
+                Capsule().fill(LinearGradient(colors: [Palette.ok, Palette.warm, Palette.hot], startPoint: .leading, endPoint: .trailing))
+                    .frame(width: geo.size.width * pct / 100)
+            }
+        }
+        .frame(height: 7)
+        .accessibilityHidden(true)
+    }
+}
+
+/// 메뉴바 패널에 들어가는 작은 카드: CPU 를 제일 많이 쓰는 앱 하나만 캐릭터로, 옆에 전체 CPU.
+struct BusiestCard: View {
+    @ObservedObject var store: Store
+    var open: () -> Void
+
+    static let box: CGFloat = 104
+
+    var body: some View {
+        let groups = groupByApp(store.procs)
+        if let g = groups.first {
+            let (pct, cores) = SummaryStrip.total(groups)
+            let m = BlobMetrics(cpu: g.cpu)
+            HStack(alignment: .center, spacing: 14) {
+                Character(group: g, selected: false, showLabel: false)
+                    .scaleEffect(min(1, Self.box / (m.height + Character.overTop)), anchor: .bottom)
+                    .frame(width: Self.box, height: Self.box, alignment: .bottom)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(g.name).fontWeight(.semibold).lineLimit(1)
+                    (Text(String(format: "CPU %.1f%%", g.cpu)).foregroundColor(Palette.tint(g.cpu)).bold()
+                     + Text(" · \(g.mood.text)")).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                    Spacer().frame(height: 2)
+                    Text("내 프로그램 전체 \(Int(pct.rounded()))% (코어 \(cores)개)").font(.caption).foregroundStyle(.secondary)
+                    CPUBar(pct: pct)
+                    Button("실행 중인 프로그램 \(groups.count)개 보기", action: open)
+                        .buttonStyle(.link).font(.caption).padding(.top, 2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 10).fill(Palette.window))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Palette.line))
+        } else {
+            Text(store.procsLoaded ? "실행 중인 내 프로그램이 없어요." : "살펴보는 중…")
+                .font(.callout).foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// 캐릭터들이 바닥 띠 위에 나란히 선 무대.
+/// 무대 높이를 채우도록 캐릭터를 키우고, 그러다 폭이 모자라면 무대에 올리는 수를 줄인다(나머지는 오른쪽 위 '그 밖에' 메뉴).
 struct Stage: View {
+    /// CPU 순으로 줄 선 전체 앱
     let groups: [AppGroup]
-    /// 무대에 못 올라간 앱. 칩을 누르면 목록에서 골라 상세 칸에 띄울 수 있다.
-    let hidden: [AppGroup]
     let selected: AppGroup.ID?
     var pick: (AppGroup.ID) -> Void
     var showTable: () -> Void
 
     static let floor: CGFloat = 46
     static let gap: CGFloat = 6
-    static let moreWidth: CGFloat = 170
+    static let most = 7, fewest = 4
+    static let maxZoom: CGFloat = 2
 
     var body: some View {
         GeometryReader { geo in
-            let need = groups.reduce(0) { $0 + BlobMetrics(cpu: $1.cpu).width } + Self.gap * CGFloat(groups.count)
-                + (hidden.isEmpty ? 0 : Self.moreWidth)
-            let scale = min(1, (geo.size.width - 20) / max(need, 1))
+            let fit = Self.fit(groups, in: geo.size)
+            let shown = groups.prefix(fit.count), hidden = Array(groups.dropFirst(fit.count))
             ZStack(alignment: .bottom) {
                 Palette.floor.frame(height: Self.floor)
                 HStack(alignment: .bottom, spacing: Self.gap) {
-                    ForEach(groups) { g in
+                    ForEach(shown) { g in
                         // 버튼이라 키보드(Tab·Space)와 VoiceOver 로도 고를 수 있다
-                        Button { pick(g.id) } label: { Character(group: g, selected: g.id == selected) }
+                        Button { pick(g.id) } label: { Character(group: g, selected: g.id == selected, zoom: fit.zoom) }
                             .buttonStyle(.plain)
-                    }
-                    if !hidden.isEmpty {
-                        Menu {
-                            ForEach(hidden) { g in
-                                Button("\(g.name) · \(String(format: "%.1f", g.cpu))%") { pick(g.id) }
-                            }
-                            Divider()
-                            Button("표에서 보기", action: showTable)
-                        } label: {
-                            Text("그 밖에 \(hidden.count)개 · 표에서 보기").font(.system(size: 12)).foregroundStyle(.secondary)
-                                .padding(.horizontal, 10).padding(.vertical, 4)
-                                .background(Capsule().fill(Palette.surface))
-                                .overlay(Capsule().stroke(Palette.line))
-                        }
-                        .menuStyle(.button).menuIndicator(.hidden).buttonStyle(.plain).fixedSize()
-                        .frame(maxHeight: .infinity, alignment: .center)
                     }
                 }
                 .fixedSize()
                 .padding(.bottom, Self.floor)
-                .scaleEffect(scale, anchor: .bottom)
+                .scaleEffect(fit.shrink, anchor: .bottom)
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .bottom)
+            .overlay(alignment: .topTrailing) {
+                if !hidden.isEmpty { more(hidden).padding(12) }
+            }
         }
         .frame(minHeight: 380)
         .background(Palette.window)
+    }
+
+    /// 무대에 못 올라간 앱. 메뉴에서 골라 상세 칸에 띄우거나 표로 간다.
+    func more(_ hidden: [AppGroup]) -> some View {
+        Menu {
+            ForEach(hidden) { g in
+                Button("\(g.name) · \(String(format: "%.1f", g.cpu))%") { pick(g.id) }
+            }
+            Divider()
+            Button("표에서 보기", action: showTable)
+        } label: {
+            Text("그 밖에 \(hidden.count)개 · 표에서 보기").font(.system(size: 12)).foregroundStyle(.secondary)
+                .padding(.horizontal, 10).padding(.vertical, 4)
+                .background(Capsule().fill(Palette.surface))
+                .overlay(Capsule().stroke(Palette.line))
+        }
+        .menuStyle(.button).menuIndicator(.hidden).buttonStyle(.plain).fixedSize()
+    }
+
+    /// 몇 개를 올리고(count) 얼마나 키울지(zoom ≥ 1), 그래도 넘치면 얼마나 줄일지(shrink ≤ 1).
+    /// 키울 때는 캐릭터가 직접 크게 그려서 흐려지지 않게 하고, 줄일 때만 scaleEffect 를 쓴다.
+    static func fit(_ groups: [AppGroup], in size: CGSize) -> (count: Int, zoom: CGFloat, shrink: CGFloat) {
+        let room = size.width - 24
+        // 위쪽 여유: '그 밖에' 메뉴 자리 44
+        let high = (size.height - floor - 44) / (BlobMetrics(cpu: groups.first?.cpu ?? 0).height + Character.overTop)
+        let target = max(1, min(maxZoom, high))
+        func layout(_ n: Int) -> (zoom: CGFloat, shrink: CGFloat) {
+            let bodies = groups.prefix(n).reduce(0) { $0 + BlobMetrics(cpu: $1.cpu).width }
+            let gaps = gap * CGFloat(max(n - 1, 0))
+            let zoom = max(1, min(target, (room - gaps) / max(bodies, 1)))
+            return (zoom, min(1, room / max(bodies * zoom + gaps, 1)))
+        }
+        // 많이 올리되, 그 때문에 목표 크기의 80%보다 작아지지는 않게
+        let upper = min(most, groups.count)
+        for n in stride(from: upper, through: min(fewest, upper), by: -1) {
+            let l = layout(n)
+            if l.zoom * l.shrink >= target * 0.8 || n == min(fewest, upper) { return (n, l.zoom, l.shrink) }
+        }
+        return (upper, 1, 1)
     }
 }
 
@@ -197,6 +272,10 @@ struct BlobMetrics {
 struct Character: View {
     let group: AppGroup
     let selected: Bool
+    /// 1보다 크면 그만큼 크게 그린다. 이름표 글자 크기는 그대로.
+    var zoom: CGFloat = 1
+    /// 이름표(이름·CPU)를 아래에 붙일지. 옆에 따로 적을 때는 끈다.
+    var showLabel = true
     @State private var hover = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.stillCharacters) private var still
@@ -211,25 +290,28 @@ struct Character: View {
             if reduceMotion || still {
                 // 움직임 줄이기·스크린샷: 멈춘 한 장
                 Canvas { ctx, _ in
+                    ctx.scaleBy(x: zoom, y: zoom)
                     ctx.translateBy(x: Self.overSide, y: Self.overTop)
                     painter.drawBody(&ctx, icon: ctx.resolve(AppIcon.image(for: group)))
                     painter.drawEffects(&ctx, time: 0.5)   // 땀·zz 는 멈춘 채로 보인다(시안과 같음)
                 }
             } else {
-                LiveBlob(painter: painter, icon: AppIcon.nsImage(for: group), key: "\(group.id)|\(group.cpu)")
+                LiveBlob(painter: painter, icon: AppIcon.nsImage(for: group), zoom: zoom, key: "\(group.id)|\(group.cpu)|\(zoom)")
             }
         }
-        .frame(width: m.width + Self.overSide * 2, height: m.height + Self.overTop)
-        .padding(.horizontal, -Self.overSide).padding(.top, -Self.overTop)
-        .frame(width: m.width, height: m.height)
+        .frame(width: (m.width + Self.overSide * 2) * zoom, height: (m.height + Self.overTop) * zoom)
+        .padding(.horizontal, -Self.overSide * zoom).padding(.top, -Self.overTop * zoom)
+        .frame(width: m.width * zoom, height: m.height * zoom)
         .overlay(alignment: .bottom) {
-            VStack(spacing: 0) {
-                Text(group.name).font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(selected ? Color.accentColor : .primary)
-                Text(String(format: "%.1f%%", group.cpu)).font(.system(size: 11)).foregroundStyle(.secondary)
+            if showLabel {
+                VStack(spacing: 0) {
+                    Text(group.name).font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(selected ? Color.accentColor : .primary)
+                    Text(String(format: "%.1f%%", group.cpu)).font(.system(size: 11)).foregroundStyle(.secondary)
+                }
+                .lineLimit(1).fixedSize()
+                .offset(y: 40)
             }
-            .lineLimit(1).fixedSize()
-            .offset(y: 40)
         }
         .offset(y: hover && !reduceMotion ? -3 : 0)
         .animation(.easeOut(duration: 0.2), value: hover)
@@ -255,13 +337,14 @@ extension EnvironmentValues {
 struct LiveBlob: NSViewRepresentable {
     let painter: BlobPainter
     let icon: NSImage
+    var zoom: CGFloat = 1
     let key: String
 
     func makeNSView(context: Context) -> BlobLayerView { BlobLayerView() }
     func updateNSView(_ v: BlobLayerView, context: Context) {
         guard v.key != key else { return }
         v.key = key
-        v.build(painter: painter, icon: icon)
+        v.build(painter: painter, icon: icon, zoom: zoom)
     }
 }
 
@@ -278,31 +361,41 @@ final class BlobLayerView: NSView {
     override func layout() {
         super.layout()
         // 처음 크기가 정해질 때와 크기가 바뀔 때 다시 굽는다
-        if pending != nil, layer?.sublayers?.first?.bounds.size != bounds.size { rebuild() }
+        if pending != nil, layer?.sublayers?.first?.frame.size != bounds.size { rebuild() }
     }
 
-    private var pending: (BlobPainter, NSImage)?
-    func build(painter: BlobPainter, icon: NSImage) { pending = (painter, icon); rebuild() }
+    private var pending: (BlobPainter, NSImage, CGFloat)?
+    func build(painter: BlobPainter, icon: NSImage, zoom: CGFloat) { pending = (painter, icon, zoom); rebuild() }
 
     private func rebuild() {
-        guard let (p, icon) = pending, let host = layer, bounds.width > 0 else { return }
+        guard let (p, icon, zoom) = pending, let host = layer, bounds.width > 0 else { return }
         host.sublayers?.forEach { $0.removeFromSuperlayer() }
         let ox = Character.overSide, oy = Character.overTop
-        let scale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+        // 크게 그릴 때도 또렷하게 그 배율만큼 촘촘히 굽는다
+        let scale = (window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2) * zoom
+
+        // 원래 크기로 그린 뒤 통째로 zoom 배 키운다. 왼쪽 위 모서리 기준.
+        let base = CGRect(x: 0, y: 0, width: bounds.width / zoom, height: bounds.height / zoom)
+        let stage = CALayer()
+        stage.anchorPoint = .zero
+        stage.bounds = base
+        stage.position = .zero
+        stage.transform = CATransform3DMakeScale(zoom, zoom, 1)
+        host.addSublayer(stage)
 
         // 바깥 층은 떨기(가로 1pt), 안쪽 층은 바닥 가운데를 기준으로 숨쉬기
-        let shiver = CALayer(); shiver.frame = bounds
+        let shiver = CALayer(); shiver.frame = base
         let breathe = CALayer()
-        breathe.bounds = bounds
-        breathe.anchorPoint = CGPoint(x: (ox + p.cx) / bounds.width, y: (oy + p.h) / bounds.height)
+        breathe.bounds = base
+        breathe.anchorPoint = CGPoint(x: (ox + p.cx) / base.width, y: (oy + p.h) / base.height)
         breathe.position = CGPoint(x: ox + p.cx, y: oy + p.h)
         shiver.addSublayer(breathe)
-        host.addSublayer(shiver)
+        stage.addSublayer(shiver)
 
         let art = ImageRenderer(content: Canvas { ctx, _ in
             ctx.translateBy(x: ox, y: oy)
             p.drawBody(&ctx, icon: ctx.resolve(Image(nsImage: icon)))
-        }.frame(width: bounds.width, height: bounds.height))
+        }.frame(width: base.width, height: base.height))
         art.scale = scale
         let body = CALayer()
         body.frame = breathe.bounds
@@ -344,6 +437,7 @@ final class BlobLayerView: NSView {
                 path.addQuadCurve(to: CGPoint(x: 0, y: 0), control: CGPoint(x: -4, y: 7))
                 drop.path = path
                 drop.fillColor = NSColor(BlobPainter.sweat).cgColor
+                drop.contentsScale = scale
                 drop.position = CGPoint(x: ox + x, y: oy + y)
                 drop.opacity = 0
                 let fall = basic("transform.translation.y", -4, 16, 1.1, .easeIn, reverse: false)

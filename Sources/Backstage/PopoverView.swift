@@ -8,6 +8,7 @@ struct PopoverView: View {
     @ObservedObject var login: LoginItem
     @ObservedObject var notifier: Notifier
     var openWindow: (Job.ID?) -> Void = { _ in }
+    var openProcs: () -> Void = {}
 
     static let size = CGSize(width: 420, height: 520)
 
@@ -59,6 +60,10 @@ struct PopoverView: View {
                                 }
                             }
                         }
+                    }
+
+                    section("CPU 제일 많이 쓰는 앱", count: nil) {
+                        BusiestCard(store: store, open: openProcs)
                     }
 
                     if !arrivals.isEmpty {

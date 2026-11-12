@@ -36,6 +36,7 @@ struct ContentView: View {
             if tab == 0 { JobsView(store: store) } else { ProcsView(store: store) }
         }
         .frame(minWidth: 900, minHeight: 520)
+        .onReceive(store.$windowTab) { if let t = $0 { tab = t } }
     }
 }
 
