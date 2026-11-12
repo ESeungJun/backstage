@@ -108,7 +108,7 @@ open build/Backstage.app --args --demo --window   # 예시 데이터를 전체 �
 | `Tests/BackstageCoreTests` | 지어낸 라벨로 만든 `launchctl` 출력 고정 자료와 테스트 |
 | `build.sh` | arm64·x86_64로 `swift build` 해 합치고, 아이콘과 Info.plist를 만들고, 서명 |
 | `tools/make_icon.swift` | 앱 아이콘(`docs/images/icon-1024.png`)을 그림 |
-| `VERSION` | 앱 버전. 릴리스 태그와 같아야 함(`v1.1.0`) |
+| `VERSION` | 앱 버전. 릴리스 태그와 같아야 함(`v2.0.0`) |
 
 push·PR 마다 `.github/workflows/ci.yml` 이 `swift build`·`swift test` 를 돌립니다.
 `v*` 태그를 push하면 GitHub Actions가 유니버설 앱을 빌드하고, 하드닝 런타임으로 Developer ID 서명을 합니다.
