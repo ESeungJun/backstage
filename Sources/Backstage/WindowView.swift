@@ -10,7 +10,7 @@ enum Filter: String, CaseIterable, Identifiable {
 /// "전체 보기" 창.
 struct ContentView: View {
     @ObservedObject var store: Store
-    @State private var tab = 0
+    @State var tab = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -326,33 +326,4 @@ func readLogs(err: String?, out: String?) -> String {
     if !e.isEmpty { parts.append(out == err ? e : "[stderr]\n" + e) }
     if !o.isEmpty { parts.append("[stdout]\n" + o) }
     return parts.joined(separator: "\n\n")
-}
-
-struct ProcsView: View {
-    @ObservedObject var store: Store
-    @State private var query = ""
-
-    var body: some View {
-        let list = store.procs.filter { query.isEmpty || $0.path.localizedCaseInsensitiveContains(query) }
-        VStack(spacing: 10) {
-            HStack {
-                Text("내 계정으로 실행 중인 프로그램 \(store.procs.count)개 (macOS 기본 시스템 프로세스 제외, CPU 순)")
-                    .foregroundStyle(.secondary)
-                Spacer()
-                TextField("이름·경로 검색", text: $query).textFieldStyle(.roundedBorder).frame(width: 220)
-            }
-            Table(list) {
-                TableColumn("이름") { p in Text(p.name).fontWeight(.medium) }.width(min: 160, ideal: 220)
-                TableColumn("CPU %") { p in Text(String(format: "%.1f", p.cpu)).foregroundStyle(p.cpu > 50 ? .red : .primary) }.width(60)
-                TableColumn("메모리 %") { p in Text(String(format: "%.1f", p.mem)) }.width(70)
-                TableColumn("실행 시간") { p in Text(p.elapsed) }.width(90)
-                TableColumn("PID") { p in Text("\(p.id)").foregroundStyle(.secondary) }.width(60)
-                TableColumn("경로") { p in Text(p.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled) }
-            }
-        }
-        .padding(14)
-        // 이 탭이 보일 때만 ps 를 돈다
-        .onAppear { store.setViewingProcs(true) }
-        .onDisappear { store.setViewingProcs(false) }
-    }
 }

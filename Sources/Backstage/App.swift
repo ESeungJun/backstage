@@ -1,4 +1,4 @@
-// Backstage: launchd 예약/상주 작업과 내 프로세스를 보여주는 읽기 전용 메뉴바 앱
+// Backstage: launchd 예약/상주 작업과 내 프로세스를 보여주는 메뉴바 앱. 작업은 읽기만 하고, 프로그램은 사용자가 고른 것만 끈다.
 import SwiftUI
 import AppKit
 import Combine
@@ -89,7 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             w.title = "Backstage"
             w.isReleasedWhenClosed = false
             w.delegate = self
-            w.contentViewController = NSHostingController(rootView: ContentView(store: store))
+            w.contentViewController = NSHostingController(rootView: ContentView(store: store, tab: args.contains("--procs") ? 1 : 0))
             w.setContentSize(size)
             w.center()
             window = w
@@ -105,10 +105,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     /// 예시 데이터 화면을 화면에 올리지 않은 창에서 그려 PNG 로 저장한다.
     private func snapshot(to dir: URL) {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        if args.contains("--dark") { NSApp.appearance = NSAppearance(named: .darkAqua) }
         store.selection = store.jobs.first(where: \.failed)?.id
         let shots: [(String, CGSize, AnyView)] = [
             ("popover.png", PopoverView.size, AnyView(PopoverView(store: store, login: login, notifier: notifier))),
             ("window.png", CGSize(width: 1240, height: 720), AnyView(ContentView(store: store))),
+            ("procs.png", CGSize(width: 1240, height: 720), AnyView(ContentView(store: store, tab: 1).environment(\.stillCharacters, true))),
         ]
         for (name, size, view) in shots {
             let host = NSHostingView(rootView: view.frame(width: size.width, height: size.height)

@@ -40,7 +40,12 @@ Backstage는 같은 정보를 읽어서 무엇이 언제 도는지, 지금 무�
 - **상세 정보와 로그** — 작업을 고르면 전체 명령, 작업 폴더, 설정 파일, 로그 마지막 부분이 나옵니다.
   설정 파일을 Finder에서 보거나, 로그를 열거나, 터미널에서 직접 확인할 명령(`launchctl print …`)을 복사할 수 있습니다.
 - **검색과 필터** — 이름·경로·앱 이름으로 찾고, `살펴볼 것`·`예약`·`상주`·`새로 들어옴`·`꺼짐`과 출처별로 거릅니다.
-- **실행 중인 프로그램** — 두 번째 탭에서 내 계정으로 도는 프로그램을 CPU 순으로 보여 줍니다(macOS 시스템 프로세스는 뺍니다).
+- **실행 중인 프로그램** — 두 번째 탭에서 내 계정으로 도는 앱을 말랑한 캐릭터로 보여 줍니다. CPU를 많이 쓸수록 뚱뚱해져요.
+  거의 안 쓰면 졸고, 50%를 넘으면 땀을 흘리고, 100%를 넘으면 김이 납니다(코어 하나가 100%). 도우미 프로세스는 앱 하나로 합치고, macOS 시스템 프로세스는 뺍니다.
+  캐릭터를 고르면 CPU·메모리·실행 시간이 보이고, `표`로 바꾸면 프로세스 하나하나를 볼 수 있습니다.
+- **프로그램 끄기** — `종료…`를 누르고 확인하면, 앱에는 정상 종료를 요청하고(저장할 게 있으면 앱이 물어봅니다) 그 밖의 프로그램에는 `SIGTERM`을 보냅니다.
+  5초가 지나도 안 꺼지면 강제 종료를 고를 수 있습니다. macOS 시스템 프로그램과 Backstage 자신에는 종료 버튼이 없습니다.
+  움직임은 Core Animation이 그려서 CPU를 보는 화면이 CPU를 먹지 않고, 손쉬운 사용의 '동작 줄이기'를 켜면 멈춥니다.
 
 ## 메뉴바에 두고 쓰는 앱
 
@@ -50,8 +55,11 @@ Backstage는 같은 정보를 읽어서 무엇이 언제 도는지, 지금 무�
   남이 심은 데몬의 실패나 로그아웃 때의 종료 신호는 세지 않습니다. `확인함`을 누르면 그 실패는 빠지고, 다시 돌아 또 실패하면 다시 알려 줍니다.
 - **조용히 갱신** — 요약이나 창을 열 때 새로 읽고, 열려 있는 동안은 30초마다, 닫혀 있을 때는 5분마다 읽습니다(⌘R로 바로 새로고침).
 - **로그인 시 실행** — 처음 열 때 한 번 물어봅니다. 요약 아래 `⋯` 메뉴에서 언제든 켜고 끌 수 있습니다.
-- **읽기 전용** — 작업을 켜거나, 끄거나, 고치거나, 지우지 않습니다. plist, `launchctl print`, `ps`만 읽습니다.
+- **작업은 읽기만** — 작업을 켜거나, 끄거나, 고치거나, 지우지 않습니다. plist, `launchctl print`, `ps`만 읽습니다.
+  끄는 것은 '실행 중인 프로그램' 탭에서 직접 고르고 확인한 프로그램 하나뿐입니다.
   쓰는 것은 자기 기록(`~/Library/Application Support/Backstage/`의 실행 기록·기준선)과 설정뿐입니다.
+
+<p align="center"><img src="docs/images/procs.png" width="100%" alt="실행 중인 프로그램: CPU만큼 뚱뚱한 젤리 캐릭터들과, 가장 바쁜 앱의 상세 정보와 종료 버튼"></p>
 
 <p align="center"><img src="docs/images/popover.png" width="420" alt="메뉴바 요약: 살펴볼 것, 새로 들어온 항목, 다음 큐, 지금 무대 위"></p>
 
@@ -85,9 +93,9 @@ swift build              # 디버그 빌드
 swift test               # 파서·모델 테스트 (XCTest 가 없으면 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer)
 ./build.sh               # build/Backstage.app (유니버설, ad-hoc 서명)
 ./build.sh --install     # 빌드한 뒤 ~/Applications 에 복사하고 실행
-open build/Backstage.app --args --demo --window   # 예시 데이터를 전체 보기 창으로
+open build/Backstage.app --args --demo --window   # 예시 데이터를 전체 보기 창으로 (--procs 를 더하면 실행 중인 프로그램 탭)
 .build/debug/Backstage --probe                    # 화면 없이 수집 한 번의 프로세스 수·시간을 잰다
-.build/debug/Backstage --snapshot <폴더>           # 예시 화면을 화면에 띄우지 않고 PNG 로 저장 (README 그림)
+.build/debug/Backstage --snapshot <폴더>           # 예시 화면을 화면에 띄우지 않고 PNG 로 저장 (README 그림, --dark 면 다크 모드)
 ```
 
 <details>
@@ -95,8 +103,8 @@ open build/Backstage.app --args --demo --window   # 예시 데이터를 전체 �
 
 | 경로 | 역할 |
 |---|---|
-| `Sources/BackstageCore` | plist·`launchctl` 출력 해석, 일정 문장, 상태 판정, 수집, 실행 기록부 |
-| `Sources/Backstage` | 메뉴바 아이콘, 요약 패널, 전체 보기 창 |
+| `Sources/BackstageCore` | plist·`launchctl` 출력 해석, 일정 문장, 상태 판정, 수집, 실행 기록부, 프로세스를 앱 단위로 묶기 |
+| `Sources/Backstage` | 메뉴바 아이콘, 요약 패널, 전체 보기 창, CPU 캐릭터(`ProcsView`)와 프로그램 끄기(`Quitter`) |
 | `Tests/BackstageCoreTests` | 지어낸 라벨로 만든 `launchctl` 출력 고정 자료와 테스트 |
 | `build.sh` | arm64·x86_64로 `swift build` 해 합치고, 아이콘과 Info.plist를 만들고, 서명 |
 | `tools/make_icon.swift` | 앱 아이콘(`docs/images/icon-1024.png`)을 그림 |
