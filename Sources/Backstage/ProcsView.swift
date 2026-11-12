@@ -151,12 +151,14 @@ struct BusiestCard: View {
             let (pct, cores) = SummaryStrip.total(groups)
             let m = BlobMetrics(cpu: g.cpu)
             HStack(alignment: .center, spacing: 14) {
+                // 꾸밈용: 누를 수 없고, 옆 글자가 같은 내용을 읽어 주므로 VoiceOver 에서 뺀다
                 Character(group: g, selected: false, showLabel: false)
+                    .allowsHitTesting(false).accessibilityHidden(true)
                     .scaleEffect(min(1, Self.box / (m.height + Character.overTop)), anchor: .bottom)
                     .frame(width: Self.box, height: Self.box, alignment: .bottom)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(g.name).fontWeight(.semibold).lineLimit(1)
-                    (Text(String(format: "CPU %.1f%%", g.cpu)).foregroundColor(Palette.tint(g.cpu)).bold()
+                    (Text(String(format: "CPU %.1f%%", g.cpu)).foregroundColor(.primary).bold()
                      + Text(" · \(g.mood.text)")).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                     Spacer().frame(height: 2)
                     Text("내 프로그램 전체 \(Int(pct.rounded()))% (코어 \(cores)개)").font(.caption).foregroundStyle(.secondary)
@@ -167,8 +169,8 @@ struct BusiestCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(10)
-            .background(RoundedRectangle(cornerRadius: 10).fill(Palette.window))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Palette.line))
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .controlBackgroundColor)))   // 패널의 로그인 안내 카드와 같은 모양
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Palette.line))
         } else {
             Text(store.procsLoaded ? "실행 중인 내 프로그램이 없어요." : "살펴보는 중…")
                 .font(.callout).foregroundStyle(.secondary)
@@ -226,7 +228,7 @@ struct Stage: View {
             Button("표에서 보기", action: showTable)
         } label: {
             Text("그 밖에 \(hidden.count)개 · 표에서 보기").font(.system(size: 12)).foregroundStyle(.secondary)
-                .padding(.horizontal, 10).padding(.vertical, 4)
+                .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(Capsule().fill(Palette.surface))
                 .overlay(Capsule().stroke(Palette.line))
         }
@@ -243,7 +245,8 @@ struct Stage: View {
         func layout(_ n: Int) -> (zoom: CGFloat, shrink: CGFloat) {
             let bodies = groups.prefix(n).reduce(0) { $0 + BlobMetrics(cpu: $1.cpu).width }
             let gaps = gap * CGFloat(max(n - 1, 0))
-            let zoom = max(1, min(target, (room - gaps) / max(bodies, 1)))
+            // 0.05 단위로 끊는다. 창 크기를 바꾸는 동안 배율이 조금씩 변할 때마다 캐릭터 그림을 다시 굽지 않게.
+            let zoom = max(1, (min(target, (room - gaps) / max(bodies, 1)) * 20).rounded(.down) / 20)
             return (zoom, min(1, room / max(bodies * zoom + gaps, 1)))
         }
         // 많이 올리되, 그 때문에 목표 크기의 80%보다 작아지지는 않게
@@ -712,7 +715,7 @@ struct QuitSheet: View {
             VStack(spacing: 8) {
                 switch flow.step {
                 case .confirm:
-                    Text("\(withJosa(g.name, isApp: g.appPath != nil, "을", "를")) 끌까요?").font(.system(size: 14, weight: .bold))
+                    Text("\(withJosa(g.name, isApp: g.appPath != nil, "을", "를")) 종료할까요?").font(.system(size: 14, weight: .bold))
                     Text("CPU \(String(format: "%.1f", g.cpu))% · 프로세스 \(g.procs.count)개\n"
                          + (g.appPath != nil ? "저장하지 않은 문서가 있으면 앱이 물어봐요." : "프로그램에 종료 신호를 보내요."))
                         .font(.system(size: 13)).foregroundStyle(.secondary).multilineTextAlignment(.center)
