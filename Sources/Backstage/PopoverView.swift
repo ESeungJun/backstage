@@ -50,13 +50,13 @@ struct PopoverView: View {
 
                     section("살펴볼 것", count: attention.count) {
                         if attention.isEmpty {
-                            quiet(store.updated == nil ? "살펴보는 중…" : "실패한 내 작업이 없습니다.")
+                            quiet(store.updated == nil ? "살펴보는 중…" : "실패한 내 작업이 없어요.")
                         } else {
                             ForEach(attention) { j in
                                 row(j, sub: j.lastExit.map(exitDescription) ?? j.label) {
                                     Button("확인함") { store.acknowledge(j) }
                                         .controlSize(.small)
-                                        .help("이 실패를 봤다고 표시합니다. 다시 돌아 또 실패하면 다시 알려 줍니다.")
+                                        .help("봤다고 표시해요. 또 실패하면 다시 알려 줘요.")
                                 }
                             }
                         }
@@ -75,7 +75,7 @@ struct PopoverView: View {
                     }
 
                     section("다음 큐", count: nil) {
-                        if cues.isEmpty { quiet("예정된 실행이 없습니다.") }
+                        if cues.isEmpty { quiet("예정된 실행이 없어요.") }
                         ForEach(Array(cues)) { j in
                             row(j, sub: j.schedule) {
                                 VStack(alignment: .trailing, spacing: 1) {
@@ -87,7 +87,7 @@ struct PopoverView: View {
                     }
 
                     section("지금 무대 위", count: running.count) {
-                        if running.isEmpty { quiet("무대 뒤가 조용합니다.") }
+                        if running.isEmpty { quiet("무대 뒤가 조용해요.") }
                         else {
                             Text(running.prefix(12).map(\.displayProgram).joined(separator: " · ")
                                  + (running.count > 12 ? " 외 \(running.count - 12)개" : ""))
@@ -104,7 +104,7 @@ struct PopoverView: View {
             HStack {
                 Button("전체 보기") { openWindow(nil) }
                     .keyboardShortcut("o")
-                    .help("모든 작업을 창으로 엽니다 (⌘O)")
+                    .help("모든 작업을 창으로 열어요 (⌘O)")
                 Spacer()
                 Menu {
                     Toggle("로그인 시 실행", isOn: Binding(get: { login.enabled }, set: { login.set($0) }))

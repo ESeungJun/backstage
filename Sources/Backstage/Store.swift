@@ -102,6 +102,20 @@ final class Store: ObservableObject {
         }
     }
 
+    private var ownLast: (cpu: Double, at: Date)?
+
+    /// 지난번 갱신부터 지금까지 Backstage 가 쓴 CPU 평균(%). 처음에는 앱이 켜진 뒤 평균.
+    private func ownAverageCPU(now: Date) -> Double {
+        var u = rusage()
+        getrusage(RUSAGE_SELF, &u)
+        let cpu = Double(u.ru_utime.tv_sec + u.ru_stime.tv_sec) + Double(u.ru_utime.tv_usec + u.ru_stime.tv_usec) / 1e6
+        let (c0, t0) = ownLast ?? (0, launched)
+        ownLast = (cpu, now)
+        let wall = now.timeIntervalSince(t0)
+        return wall > 1 ? max(0, (cpu - c0) / wall * 100) : 0
+    }
+    private let launched = Date()
+
     /// 프로그램 탭이 보일 때만 ps 를 돈다.
     func setViewingProcs(_ on: Bool, refreshNow: Bool = true) {
         procViewers = max(0, procViewers + (on ? 1 : -1))
@@ -153,7 +167,8 @@ final class Store: ObservableObject {
         if jobs != r.jobs { jobs = r.jobs }
         if summaries != r.summaries { summaries = r.summaries }
         if logChanged != r.logChanged { logChanged = r.logChanged }
-        if let p = r.procs {
+        if let raw = r.procs {
+            let p = replacingCPU(raw, pid: Int(getpid()), with: ownAverageCPU(now: now))
             if p != procs { procs = p }
             if !procsLoaded { procsLoaded = true }
         }

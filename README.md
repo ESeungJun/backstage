@@ -75,7 +75,7 @@ One file works on both Apple silicon and Intel Macs.
 It's signed with a Developer ID and notarized by Apple, so it opens without any warning.
 
 Requires macOS 14 or later. No permissions are needed. The interface is in Korean.
-A curtain icon appears in the menu bar; the app has no Dock icon.
+A small blob icon appears in the menu bar; the app has no Dock icon.
 
 Backstage is macOS only: it reads launchd, which is how macOS runs background jobs.
 
