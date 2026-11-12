@@ -112,7 +112,7 @@ open build/Backstage.app --args --demo --window   # sample data in the full wind
 | `Tests/BackstageCoreTests` | Fixtures of `launchctl` output with made-up labels, and the tests |
 | `build.sh` | Runs `swift build` for arm64 and x86_64, merges them, makes the icon and Info.plist, signs |
 | `tools/make_icon.swift` | Draws the app icon (`docs/images/icon-1024.png`) |
-| `VERSION` | App version; a release tag must match it (`v1.1.0`) |
+| `VERSION` | App version; a release tag must match it (`v2.0.0`) |
 
 Every push and pull request runs `swift build` and `swift test` (`.github/workflows/ci.yml`).
 Pushing a `v*` tag makes GitHub Actions build the universal app, sign it with a Developer ID with the hardened runtime,
